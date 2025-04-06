@@ -1,29 +1,33 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Buy xDai</title>
-  </head>
-  <body>
-    <h1>Buy xDai via MetaMask</h1>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Buy xDai</title>
+</head>
+<body>
+  <h1>Buy xDai</h1>
 
-    <p>This feature works best on mobile devices using the MetaMask app.</p>
+  <p>This tool lets you buy xDai using the MetaMask mobile app.</p>
 
-    <button id="buyXdaiBtn">Buy xDai</button>
+  <button id="buyXdaiBtn">Buy xDai (Mobile Only)</button>
 
-    <script>
-      const buyLink = "https://metamask.app.link/buy";
+  <script>
+    const buyLink = "https://metamask.app.link/buy";
 
-      document.getElementById("buyXdaiBtn").addEventListener("click", () => {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          window.location.href = buyLink;
-        } else {
-          alert(
-            "Please open this page in the MetaMask Mobile app to use the buy feature."
-          );
-        }
-      });
-    </script>
-  </body>
+    document.getElementById("buyXdaiBtn").addEventListener("click", () => {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // Open MetaMask mobile app to Buy screen
+        window.location.href = buyLink;
+      } else {
+        // Desktop users get this fallback message
+        alert(
+          "Please open this dapp in the MetaMask mobile app to buy xDai with your debit card."
+        );
+      }
+    });
+  </script>
+</body>
 </html>
+
