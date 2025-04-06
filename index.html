@@ -1,94 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Buy xDai</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to bottom right, #f1e7ff, #ffffff);
-      text-align: center;
-      padding: 60px 20px;
-    }
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Buy xDai</title>
+  </head>
+  <body>
+    <h1>Buy xDai via MetaMask</h1>
 
-    h1 {
-      font-size: 24px;
-      color: #3a245c;
-      margin-bottom: 16px;
-    }
+    <p>This feature works best on mobile devices using the MetaMask app.</p>
 
-    input {
-      padding: 12px;
-      font-size: 18px;
-      width: 80%;
-      max-width: 300px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
+    <button id="buyXdaiBtn">Buy xDai</button>
 
-    a.button-link {
-      display: inline-block;
-      padding: 15px 30px;
-      font-size: 18px;
-      background-color: #6a3acc;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 10px;
-      transition: background-color 0.2s ease;
-    }
+    <script>
+      const buyLink = "https://metamask.app.link/buy";
 
-    a.button-link:hover {
-      background-color: #562ca3;
-    }
-
-    .note {
-      margin-top: 40px;
-      font-size: 14px;
-      color: #888;
-    }
-  </style>
-</head>
-<body>
-  <h1>Buy xDai Instantly</h1>
-  <input type="number" id="amountInput" placeholder="Enter amount in xDai" />
-
-  <br />
-
-  <a href="#" class="button-link" id="buyNowBtn">Buy xDai</a>
-
-  <p class="note">Requires MetaMask app installed on your phone</p>
-
-  <script>
-    const buyBtn = document.getElementById("buyNowBtn");
-    const amountInput = document.getElementById("amountInput");
-
-    function isMobile() {
-      return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    }
-
-    buyBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      const amount = amountInput.value.trim();
-
-      if (!amount || isNaN(amount) || Number(amount) <= 0) {
-        alert("Please enter a valid xDai amount.");
-        return;
-      }
-
-      const asset = "xDai";
-      const redirect = encodeURIComponent("https://willfx.github.io/Metamask-deeplink-Xdai-Xbzz/");
-      const metamaskDeepLink = `https://metamask.app.link/buy?asset=${asset}&amount=${amount}&redirect=${redirect}`;
-
-      if (isMobile()) {
-        // Try opening MetaMask mobile app
-        window.location.href = metamaskDeepLink;
-      } else {
-        // On desktop, suggest user open on mobile
-        alert("Please open this page on your phone to use MetaMask's onramp.");
-      }
-    });
-  </script>
-</body>
+      document.getElementById("buyXdaiBtn").addEventListener("click", () => {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          window.location.href = buyLink;
+        } else {
+          alert(
+            "Please open this page in the MetaMask Mobile app to use the buy feature."
+          );
+        }
+      });
+    </script>
+  </body>
 </html>
