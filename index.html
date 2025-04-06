@@ -2,71 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Buy xDai via MetaMask</title>
+  <title>Buy xDai with MetaMask</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(to bottom right, #f3eaff, #ffffff);
+      background: linear-gradient(to bottom right, #f1e7ff, #ffffff);
       text-align: center;
       padding: 60px 20px;
     }
 
     h1 {
-      color: #3a245c;
       font-size: 24px;
-      margin-bottom: 16px;
+      color: #3a245c;
+      margin-bottom: 12px;
     }
 
     p {
       font-size: 16px;
-      margin-bottom: 32px;
       color: #555;
+      margin-bottom: 32px;
     }
 
-    button {
+    a.button-link {
+      display: inline-block;
       padding: 15px 30px;
       font-size: 18px;
-      border: none;
-      border-radius: 10px;
       background-color: #6a3acc;
       color: #fff;
-      cursor: pointer;
+      text-decoration: none;
+      border-radius: 10px;
       transition: background-color 0.2s ease;
     }
 
-    button:hover {
+    a.button-link:hover {
       background-color: #562ca3;
     }
 
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 20px;
-      }
+    .note {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #888;
+    }
 
-      button {
-        width: 100%;
-      }
+    .fallback-message {
+      display: none;
+      background: #fff3cd;
+      color: #856404;
+      padding: 15px;
+      margin-top: 30px;
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
   <h1>Buy xDai with MetaMask</h1>
-  <p>Tap the button below to purchase xDai using your card via MetaMask’s secure onramp.</p>
+  <p>Click the button below to purchase xDai using your debit/credit card through MetaMask’s secure onramp.</p>
 
-  <button id="buyButton">Buy xDai</button>
+  <!-- Mobile-friendly deep link button -->
+  <a
+    class="button-link"
+    href="https://metamask.app.link/buy?asset=xDai&amount=1&redirect=https://willfx.github.io/Metamask-deeplink-Xdai-Xbzz/"
+    id="buyButton"
+  >
+    Buy xDai with MetaMask
+  </a>
+
+  <!-- Fallback tip shown if on mobile browser -->
+  <div class="fallback-message" id="fallbackMessage">
+    Having trouble? Please open this page from the <strong>MetaMask app’s browser</strong>.<br/>
+    In MetaMask, tap the browser icon and enter: <br/>
+    <code>https://willfx.github.io/Metamask-deeplink-Xdai-Xbzz/</code>
+  </div>
 
   <script>
-    document.getElementById("buyButton").addEventListener("click", function () {
-      const asset = "xDai";                    // Token to purchase
-      const amount = "1";                      // Default suggested amount
-      const redirectUrl = encodeURIComponent(window.location.href); // Return to your dapp
+    // Show fallback message if on mobile and NOT in MetaMask
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isMetaMask = navigator.userAgent.includes("MetaMask");
 
-      const metamaskBuyUrl = `https://metamask.app.link/buy?asset=${asset}&amount=${amount}&redirect=${redirectUrl}`;
-
-      // Send user directly to MetaMask on mobile
-      window.location.href = metamaskBuyUrl;
-    });
+    if (isMobile && !isMetaMask) {
+      document.getElementById("fallbackMessage").style.display = "block";
+    }
   </script>
 </body>
 </html>
