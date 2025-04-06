@@ -3,51 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <title>Buy xDai via MetaMask</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      background: linear-gradient(to bottom right, #f3eaff, #ffffff);
       text-align: center;
-      padding: 50px;
+      padding: 60px 20px;
     }
+
     h1 {
-      color: #333;
+      color: #3a245c;
+      font-size: 24px;
+      margin-bottom: 16px;
     }
+
+    p {
+      font-size: 16px;
+      margin-bottom: 32px;
+      color: #555;
+    }
+
     button {
       padding: 15px 30px;
       font-size: 18px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       background-color: #6a3acc;
       color: #fff;
       cursor: pointer;
       transition: background-color 0.2s ease;
     }
+
     button:hover {
       background-color: #562ca3;
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 20px;
+      }
+
+      button {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Buy xDai with MetaMask</h1>
-  <p>Click the button below to purchase xDai using your credit card via MetaMask's built-in onramp.</p>
+  <p>Tap the button below to purchase xDai using your card via MetaMask’s secure onramp.</p>
+
   <button id="buyButton">Buy xDai</button>
 
   <script>
-    document.getElementById("buyButton").addEventListener("click", function() {
-      // Define parameters for the deep link:
-      const asset = "xDai";                   // The asset to buy
-      const amount = "1";                     // Default purchase amount (can be adjusted or removed)
-      // Use the current URL as the redirect so that user returns to your dapp after the transaction
-      const dappRedirect = encodeURIComponent(window.location.href);
-      
-      // Construct the deep link URL for MetaMask's buy flow
-      const metamaskBuyUrl = `https://metamask.app.link/buy?asset=${asset}&amount=${amount}&redirect=${dappRedirect}`;
-      
-      // Redirect the user to MetaMask's onramp page
+    document.getElementById("buyButton").addEventListener("click", function () {
+      const asset = "xDai";                    // Token to purchase
+      const amount = "1";                      // Default suggested amount
+      const redirectUrl = encodeURIComponent(window.location.href); // Return to your dapp
+
+      const metamaskBuyUrl = `https://metamask.app.link/buy?asset=${asset}&amount=${amount}&redirect=${redirectUrl}`;
+
+      // Send user directly to MetaMask on mobile
       window.location.href = metamaskBuyUrl;
     });
   </script>
 </body>
 </html>
-
