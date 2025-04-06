@@ -1,124 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Swap xDAI to xbzz via Li.Fi</title>
+  <meta charset="UTF-8" />
+  <title>Buy xDai via MetaMask</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background-color: #6a3acc;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #562ca3;
+    }
+  </style>
 </head>
 <body>
-  <h1>Swap xDAI to xbzz</h1>
-  
-  <!-- Input for the amount of xDAI to swap -->
-  <label for="fromAmount">Amount of xDAI:</label>
-  <input type="text" id="fromAmount" placeholder="0.0" />
-  <br/><br/>
-  
-  <!-- Exchange button -->
-  <button id="exchangeBtn">Exchange</button>
-  <br/><br/>
-  
-  <!-- Wallet connect status -->
-  <p id="walletStatus">Wallet not connected</p>
-  
-  <!-- Minimal script including MetaMask connection and Li.Fi swap integration -->
-  <script>
-    // Contract addresses on Gnosis chain (as provided in your screenshots)
-    const XDAI_ADDRESS = '0xE68558B6B2F39899926B0cAF7f109cC6a8fDea8e'; // xDAI token contract address
-    const XBZZ_ADDRESS = '0xB7e3F8E3F6Ed5c50A05525286a316e2A0d63f68a'; // xbzz token contract address
-    const CHAIN_ID = 100; // Gnosis chain id
+  <h1>Buy xDai with MetaMask</h1>
+  <p>Click the button below to purchase xDai using your credit card via MetaMask's built-in onramp.</p>
+  <button id="buyButton">Buy xDai</button>
 
-    // Utility: Shorten wallet address for display
-    function shortenAddress(address) {
-      return address.slice(0, 6) + '...' + address.slice(-4);
-    }
-    
-    // Check if MetaMask is available and connect if necessary
-    async function connectWallet() {
-      if (typeof window.ethereum === 'undefined') {
-        alert('MetaMask is not installed. Please install it and try again.');
-        return null;
-      }
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        return accounts[0];
-      } catch (err) {
-        console.error('Failed to connect wallet:', err);
-        return null;
-      }
-    }
-    
-    // Fetch a swap quote from Li.Fi for swapping xDAI to xbzz
-    async function getSwapQuote(amount) {
-      // Li.Fi API endpoint – adjust if needed based on the Li.Fi docs
-      const apiUrl = `https://li.finance/api/swap/quote?fromChainId=${CHAIN_ID}` +
-                     `&fromTokenAddress=${XDAI_ADDRESS}` +
-                     `&toChainId=${CHAIN_ID}` +
-                     `&toTokenAddress=${XBZZ_ADDRESS}` +
-                     `&amount=${amount}`;
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error('Failed to fetch swap quote.');
-        }
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error('Error fetching swap quote:', error);
-        throw error;
-      }
-    }
-    
-    // Execute the swap transaction using MetaMask
-    async function executeSwap(txData) {
-      try {
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [txData],
-        });
-        console.log('Transaction submitted:', txHash);
-        alert('Swap transaction submitted! TxHash: ' + txHash);
-      } catch (error) {
-        console.error('Transaction failed:', error);
-        alert('Transaction failed: ' + error.message);
-      }
-    }
-    
-    // Main function to trigger the swap process
-    async function swapXdaiToXbzz() {
-      // Get the user's wallet address (and connect if not already)
-      let walletAddress = await connectWallet();
-      if (!walletAddress) return;
+  <script>
+    document.getElementById("buyButton").addEventListener("click", function() {
+      // Define parameters for the deep link:
+      const asset = "xDai";                   // The asset to buy
+      const amount = "1";                     // Default purchase amount (can be adjusted or removed)
+      // Use the current URL as the redirect so that user returns to your dapp after the transaction
+      const dappRedirect = encodeURIComponent(window.location.href);
       
-      document.getElementById('walletStatus').textContent = 'Connected: ' + shortenAddress(walletAddress);
+      // Construct the deep link URL for MetaMask's buy flow
+      const metamaskBuyUrl = `https://metamask.app.link/buy?asset=${asset}&amount=${amount}&redirect=${dappRedirect}`;
       
-      // Get amount input (you may need to convert this to the smallest unit)
-      const amountInput = document.getElementById('fromAmount').value;
-      if (!amountInput || isNaN(amountInput)) {
-        alert('Please enter a valid number for the amount.');
-        return;
-      }
-      
-      // For demonstration, assume 18 decimals (use a library like ethers.js for precise conversion)
-      const decimals = 18;
-      const amountInWei = BigInt(Math.floor(parseFloat(amountInput) * Math.pow(10, decimals))).toString();
-      
-      try {
-        // Fetch swap quote from Li.Fi
-        const quote = await getSwapQuote(amountInWei);
-        
-        // Li.Fi response should include a transaction object (commonly under 'tx')
-        if (!quote.tx) {
-          throw new Error('No transaction data received from Li.Fi.');
-        }
-        
-        // Execute the transaction using MetaMask
-        await executeSwap(quote.tx);
-      } catch (error) {
-        alert('Swap failed: ' + error.message);
-      }
-    }
-    
-    // Attach event listener to the exchange button
-    document.getElementById('exchangeBtn').addEventListener('click', swapXdaiToXbzz);
+      // Redirect the user to MetaMask's onramp page
+      window.location.href = metamaskBuyUrl;
+    });
   </script>
 </body>
 </html>
+
