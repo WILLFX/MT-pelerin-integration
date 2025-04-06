@@ -2,33 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Buy xDai</title>
+  <title>Buy xDai via MetaMask</title>
 </head>
 <body>
-  <h1>Buy xDai</h1>
+  <h1>Buy xDai (Gnosis Chain)</h1>
 
-  <p>This tool lets you buy xDai using the MetaMask mobile app.</p>
+  <p>
+    To continue, you'll need to buy some <strong>xDai</strong> using the
+    <strong>MetaMask Mobile</strong> app.
+  </p>
 
-  <button id="buyXdaiBtn">Buy xDai (Mobile Only)</button>
+  <p><strong>Instructions:</strong></p>
+  <ol>
+    <li>Tap the button below. It will open MetaMask.</li>
+    <li>Go to the <strong>Buy</strong> section (if it doesn't open automatically).</li>
+    <li>Select <strong>xDai</strong> (on <strong>Gnosis Chain</strong>).</li>
+    <li>Buy <strong>at least 10 xDai</strong> using your card or preferred method.</li>
+    <li>Return here and click “Refresh Wallet” (coming soon) to continue.</li>
+  </ol>
+
+  <button id="buyXdaiBtn">Buy xDai with MetaMask</button>
 
   <script>
-    const buyLink = "https://metamask.app.link/buy";
+    const buyLink = "https://metamask.app.link/buy?asset=xdai&amount=10";
 
     document.getElementById("buyXdaiBtn").addEventListener("click", () => {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
       if (isMobile) {
-        // Open MetaMask mobile app to Buy screen
         window.location.href = buyLink;
       } else {
-        // Desktop users get this fallback message
         alert(
-          "Please open this dapp in the MetaMask mobile app to buy xDai with your debit card."
+          "Please open this page inside the MetaMask Mobile app to buy xDai on Gnosis Chain."
         );
       }
     });
   </script>
 </body>
 </html>
+
 
 
