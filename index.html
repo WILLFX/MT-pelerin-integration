@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Buy xDai with MetaMask</title>
+  <title>Buy xDai</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -15,13 +15,17 @@
     h1 {
       font-size: 24px;
       color: #3a245c;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
-    p {
-      font-size: 16px;
-      color: #555;
-      margin-bottom: 32px;
+    input {
+      padding: 12px;
+      font-size: 18px;
+      width: 80%;
+      max-width: 300px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
     }
 
     a.button-link {
@@ -44,46 +48,47 @@
       font-size: 14px;
       color: #888;
     }
-
-    .fallback-message {
-      display: none;
-      background: #fff3cd;
-      color: #856404;
-      padding: 15px;
-      margin-top: 30px;
-      border: 1px solid #ffeeba;
-      border-radius: 8px;
-    }
   </style>
 </head>
 <body>
-  <h1>Buy xDai with MetaMask</h1>
-  <p>Click the button below to purchase xDai using your debit/credit card through MetaMask’s secure onramp.</p>
+  <h1>Buy xDai Instantly</h1>
+  <input type="number" id="amountInput" placeholder="Enter amount in xDai" />
 
-  <!-- Mobile-friendly deep link button -->
-  <a
-    class="button-link"
-    href="https://metamask.app.link/buy?asset=xDai&amount=1&redirect=https://willfx.github.io/Metamask-deeplink-Xdai-Xbzz/"
-    id="buyButton"
-  >
-    Buy xDai with MetaMask
-  </a>
+  <br />
 
-  <!-- Fallback tip shown if on mobile browser -->
-  <div class="fallback-message" id="fallbackMessage">
-    Having trouble? Please open this page from the <strong>MetaMask app’s browser</strong>.<br/>
-    In MetaMask, tap the browser icon and enter: <br/>
-    <code>https://willfx.github.io/Metamask-deeplink-Xdai-Xbzz/</code>
-  </div>
+  <a href="#" class="button-link" id="buyNowBtn">Buy xDai</a>
+
+  <p class="note">Requires MetaMask app installed on your phone</p>
 
   <script>
-    // Show fallback message if on mobile and NOT in MetaMask
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const isMetaMask = navigator.userAgent.includes("MetaMask");
+    const buyBtn = document.getElementById("buyNowBtn");
+    const amountInput = document.getElementById("amountInput");
 
-    if (isMobile && !isMetaMask) {
-      document.getElementById("fallbackMessage").style.display = "block";
+    function isMobile() {
+      return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     }
+
+    buyBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      const amount = amountInput.value.trim();
+
+      if (!amount || isNaN(amount) || Number(amount) <= 0) {
+        alert("Please enter a valid xDai amount.");
+        return;
+      }
+
+      const asset = "xDai";
+      const redirect = encodeURIComponent("https://willfx.github.io/Metamask-deeplink-Xdai-Xbzz/");
+      const metamaskDeepLink = `https://metamask.app.link/buy?asset=${asset}&amount=${amount}&redirect=${redirect}`;
+
+      if (isMobile()) {
+        // Try opening MetaMask mobile app
+        window.location.href = metamaskDeepLink;
+      } else {
+        // On desktop, suggest user open on mobile
+        alert("Please open this page on your phone to use MetaMask's onramp.");
+      }
+    });
   </script>
 </body>
 </html>
