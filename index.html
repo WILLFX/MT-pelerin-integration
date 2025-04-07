@@ -2,111 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Buy xDai via Ramp</title>
+  <title>Mt Pelerin Test Integration</title>
 </head>
 <body>
-  <h1>Buy xDai (Gnosis Chain)</h1>
+  <h1>Test Mt Pelerin Widget Integration</h1>
 
   <button id="connectBtn">Connect MetaMask</button>
-
-  <div id="formSection" style="display:none;">
-    <p>1. Choose your currency:</p>
-    <select id="currencySelect">
-      <option value="USD">USD – US Dollar</option>
-      <option value="EUR">EUR – Euro</option>
-      <option value="GBP">GBP – British Pound</option>
-      <option value="CAD">CAD – Canadian Dollar</option>
-      <option value="AUD">AUD – Australian Dollar</option>
-      <option value="NGN">NGN – Nigerian Naira</option>
-      <option value="KES">KES – Kenyan Shilling</option>
-      <option value="ZAR">ZAR – South African Rand</option>
-      <option value="INR">INR – Indian Rupee</option>
-      <option value="BRL">BRL – Brazilian Real</option>
-      <option value="MXN">MXN – Mexican Peso</option>
-      <option value="PHP">PHP – Philippine Peso</option>
-      <option value="HUF">HUF – Hungarian Forint</option>
-      <option value="TRY">TRY – Turkish Lira</option>
-      <option value="PLN">PLN – Polish Złoty</option>
-    </select>
-
-    <p>2. Optional: Enter how much you want to spend</p>
-    <input type="number" id="amountInput" placeholder="e.g. 25" />
-
-    <p>3. Click below to continue with Ramp Network</p>
-    <button id="buyXdaiBtn">Buy xDai with Card</button>
-  </div>
+  <button id="openWidgetBtn" disabled>Buy xDai (Open Widget)</button>
 
   <p id="status">Not connected.</p>
 
+  <!-- Mt Pelerin widget loader -->
+  <script src="https://widgets.mtpelerin.com/bridge-widget.js"></script>
+
   <script>
+    const MTP_TEST_KEY = 'bec6626e-8913-497d-9835-6e6ae9edb144';
+    const gnosisChainId = '0x64'; // Gnosis Chain
+
     let userAddress = null;
-    let previousBalance = null;
-    const gnosisChainId = '0x64';
+    let mtpWidget = null;
 
     async function connectWallet() {
       if (!window.ethereum) {
-        alert("Please install MetaMask");
+        alert("MetaMask not detected.");
         return;
       }
 
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
         userAddress = accounts[0];
         document.getElementById('status').innerText = `Connected: ${userAddress}`;
 
-        const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
-        if (currentChain !== gnosisChainId) {
-          await window.ethereum.request({
+        const chainId = await ethereum.request({ method: 'eth_chainId' });
+        if (chainId !== gnosisChainId) {
+          await ethereum.request({
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: gnosisChainId }]
           });
         }
 
-        document.getElementById('formSection').style.display = 'block';
-        startBalancePolling();
-      } catch (err) {
-        console.error(err);
-        alert("Connection failed");
+        document.getElementById('openWidgetBtn').disabled = false;
+      } catch (error) {
+        console.error(error);
+        alert("Failed to connect or switch network.");
       }
     }
 
-    async function getXDAIBalance() {
-      const balanceHex = await window.ethereum.request({
-        method: 'eth_getBalance',
-        params: [userAddress, 'latest']
-      });
-      return parseFloat(parseInt(balanceHex, 16) / 1e18);
-    }
+    function openMtPelerinWidget() {
+      const config = {
+        apiKey: MTP_TEST_KEY,
+        crypto: 'XDAI',
+        fiat: 'USD',
+        userAddress: userAddress
+      };
 
-    async function startBalancePolling() {
-      previousBalance = await getXDAIBalance();
-      console.log("Starting balance polling. Initial balance:", previousBalance);
+      if (!mtpWidget) {
+        mtpWidget = new MtPelerinBridgeWidget(config);
+      } else {
+        mtpWidget.config = config;
+      }
 
-      setInterval(async () => {
-        const currentBalance = await getXDAIBalance();
-        console.log("Balance check:", currentBalance);
-
-        if (currentBalance > previousBalance) {
-          document.getElementById('status').innerText = `🎉 xDai received! New balance: ${currentBalance.toFixed(4)}`;
-        }
-
-        previousBalance = currentBalance;
-      }, 5000);
+      mtpWidget.open();
     }
 
     document.getElementById('connectBtn').addEventListener('click', connectWallet);
-
-    document.getElementById('buyXdaiBtn').addEventListener('click', () => {
-      const currency = document.getElementById('currencySelect').value;
-      const amount = document.getElementById('amountInput').value;
-
-      let rampURL = `https://app.ramp.network/?swapAsset=XDAI_XDAI&userAddress=${userAddress}`;
-
-      if (currency) rampURL += `&fiatCurrency=${currency}`;
-      if (amount) rampURL += `&fiatValue=${amount}`;
-
-      window.open(rampURL, '_blank');
-    });
+    document.getElementById('openWidgetBtn').addEventListener('click', openMtPelerinWidget);
   </script>
 </body>
 </html>
