@@ -2,71 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mt Pelerin Test Integration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buy xDai via Mt Pelerin</title>
+  <script src="https://widget.mtpelerin.com/mtp-widget.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <h1>Test Mt Pelerin Widget Integration</h1>
+  <h1>Buy xDai On-Ramp</h1>
+  <label for="currency">Choose your fiat currency (or enter manually):</label><br />
+  <input id="currency" type="text" placeholder="e.g. USD, KES, EUR" /><br /><br />
 
-  <button id="connectBtn">Connect MetaMask</button>
-  <button id="openWidgetBtn" disabled>Buy xDai (Open Widget)</button>
-
-  <p id="status">Not connected.</p>
-
-  <!-- Mt Pelerin widget loader -->
-  <script src="https://widgets.mtpelerin.com/bridge-widget.js"></script>
+  <button id="connectWallet">Connect MetaMask</button>
+  <button id="buyXdai" disabled>Buy 2 xDai</button>
 
   <script>
-    const MTP_TEST_KEY = 'bec6626e-8913-497d-9835-6e6ae9edb144';
-    const gnosisChainId = '0x64'; // Gnosis Chain
+    let userAddress = "";
 
-    let userAddress = null;
-    let mtpWidget = null;
-
-    async function connectWallet() {
+    async function connectMetaMask() {
       if (!window.ethereum) {
-        alert("MetaMask not detected.");
+        alert("Please install MetaMask.");
         return;
       }
-
       try {
-        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await ethereum.request({ method: "eth_requestAccounts" });
         userAddress = accounts[0];
-        document.getElementById('status').innerText = `Connected: ${userAddress}`;
 
-        const chainId = await ethereum.request({ method: 'eth_chainId' });
-        if (chainId !== gnosisChainId) {
+        const currentChain = await ethereum.request({ method: 'eth_chainId' });
+        if (currentChain !== '0x64') {
           await ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: gnosisChainId }]
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x64',
+              chainName: 'Gnosis Chain',
+              nativeCurrency: {
+                name: 'xDai',
+                symbol: 'xDai',
+                decimals: 18,
+              },
+              rpcUrls: ['https://rpc.gnosischain.com/'],
+              blockExplorerUrls: ['https://gnosisscan.io/']
+            }]
           });
         }
 
-        document.getElementById('openWidgetBtn').disabled = false;
+        document.getElementById("buyXdai").disabled = false;
+        alert("Wallet connected: " + userAddress);
       } catch (error) {
         console.error(error);
-        alert("Failed to connect or switch network.");
+        alert("Connection failed.");
       }
     }
 
-    function openMtPelerinWidget() {
-      const config = {
-        apiKey: MTP_TEST_KEY,
-        crypto: 'XDAI',
-        fiat: 'USD',
-        userAddress: userAddress
-      };
+    document.getElementById("connectWallet").onclick = connectMetaMask;
 
-      if (!mtpWidget) {
-        mtpWidget = new MtPelerinBridgeWidget(config);
-      } else {
-        mtpWidget.config = config;
-      }
-
-      mtpWidget.open();
-    }
-
-    document.getElementById('connectBtn').addEventListener('click', connectWallet);
-    document.getElementById('openWidgetBtn').addEventListener('click', openMtPelerinWidget);
+    document.getElementById("buyXdai").onclick = function () {
+      const fiatCurrency = document.getElementById("currency").value || "USD";
+      showMtpModal({
+        _ctkn: "bec6626e-8913-497d-9835-6e6ae9edb144",
+        type: "popup",
+        tab: "buy",
+        bdc: "XDAI",
+        bda: 2,
+        dnet: "xdai_mainnet",
+        addr: userAddress,
+        bsc: fiatCurrency.toUpperCase()
+      });
+    };
   </script>
 </body>
 </html>
