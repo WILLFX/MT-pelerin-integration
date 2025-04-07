@@ -2,28 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Buy xDai via MetaMask</title>
+  <title>Buy xDai via Ramp</title>
 </head>
 <body>
   <h1>Buy xDai (Gnosis Chain)</h1>
 
-  <p>1. Connect your MetaMask wallet.</p>
-  <p>2. Buy xDai in a new tab.</p>
-  <p>3. We'll detect when it arrives in your wallet.</p>
+  <button id="connectBtn">Connect MetaMask</button>
 
-  <button id="connectBtn">Connect Wallet</button>
-  <button id="buyBtn" disabled>Buy xDai (opens in new tab)</button>
+  <div id="formSection" style="display:none;">
+    <p>1. Choose your currency:</p>
+    <select id="currencySelect">
+      <option value="USD">USD – US Dollar</option>
+      <option value="EUR">EUR – Euro</option>
+      <option value="GBP">GBP – British Pound</option>
+      <option value="CAD">CAD – Canadian Dollar</option>
+      <option value="AUD">AUD – Australian Dollar</option>
+      <option value="NGN">NGN – Nigerian Naira</option>
+      <option value="KES">KES – Kenyan Shilling</option>
+      <option value="ZAR">ZAR – South African Rand</option>
+      <option value="INR">INR – Indian Rupee</option>
+      <option value="BRL">BRL – Brazilian Real</option>
+      <option value="MXN">MXN – Mexican Peso</option>
+      <option value="PHP">PHP – Philippine Peso</option>
+      <option value="HUF">HUF – Hungarian Forint</option>
+      <option value="TRY">TRY – Turkish Lira</option>
+      <option value="PLN">PLN – Polish Złoty</option>
+    </select>
+
+    <p>2. Optional: Enter how much you want to spend</p>
+    <input type="number" id="amountInput" placeholder="e.g. 25" />
+
+    <p>3. Click below to continue with Ramp Network</p>
+    <button id="buyXdaiBtn">Buy xDai with Card</button>
+  </div>
 
   <p id="status">Not connected.</p>
 
   <script>
     let userAddress = null;
     let previousBalance = null;
-    const gnosisChainId = '0x64'; // 100 in hex
+    const gnosisChainId = '0x64';
 
     async function connectWallet() {
       if (!window.ethereum) {
-        alert('Please install MetaMask!');
+        alert("Please install MetaMask");
         return;
       }
 
@@ -40,13 +62,11 @@
           });
         }
 
-        document.getElementById('buyBtn').disabled = false;
-
-        // Start polling for balance
+        document.getElementById('formSection').style.display = 'block';
         startBalancePolling();
       } catch (err) {
         console.error(err);
-        alert('Could not connect to MetaMask.');
+        alert("Connection failed");
       }
     }
 
@@ -55,35 +75,42 @@
         method: 'eth_getBalance',
         params: [userAddress, 'latest']
       });
-
       return parseFloat(parseInt(balanceHex, 16) / 1e18);
     }
 
     async function startBalancePolling() {
       previousBalance = await getXDAIBalance();
-      console.log(`Starting balance polling... Current balance: ${previousBalance} xDai`);
+      console.log("Starting balance polling. Initial balance:", previousBalance);
 
       setInterval(async () => {
         const currentBalance = await getXDAIBalance();
-        console.log(`Polled balance: ${currentBalance} xDai`);
+        console.log("Balance check:", currentBalance);
 
         if (currentBalance > previousBalance) {
-          document.getElementById('status').innerText = `🎉 xDai Received! Current balance: ${currentBalance}`;
+          document.getElementById('status').innerText = `🎉 xDai received! New balance: ${currentBalance.toFixed(4)}`;
         }
 
         previousBalance = currentBalance;
-      }, 5000); // every 5 seconds
+      }, 5000);
     }
 
     document.getElementById('connectBtn').addEventListener('click', connectWallet);
 
-    document.getElementById('buyBtn').addEventListener('click', () => {
-      const buyUrl = 'https://portfolio.metamask.io/buy?asset=xdai&network=gnosis';
-      window.open(buyUrl, '_blank');
+    document.getElementById('buyXdaiBtn').addEventListener('click', () => {
+      const currency = document.getElementById('currencySelect').value;
+      const amount = document.getElementById('amountInput').value;
+
+      let rampURL = `https://app.ramp.network/?swapAsset=XDAI_XDAI&userAddress=${userAddress}`;
+
+      if (currency) rampURL += `&fiatCurrency=${currency}`;
+      if (amount) rampURL += `&fiatValue=${amount}`;
+
+      window.open(rampURL, '_blank');
     });
   </script>
 </body>
 </html>
+
 
 
 
