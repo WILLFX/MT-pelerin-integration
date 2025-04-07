@@ -7,38 +7,84 @@
 <body>
   <h1>Buy xDai (Gnosis Chain)</h1>
 
-  <p>
-    To continue, you'll need to buy some <strong>xDai</strong> using the
-    <strong>MetaMask Mobile</strong> app.
-  </p>
+  <p>1. Connect your MetaMask wallet.</p>
+  <p>2. Buy xDai in a new tab.</p>
+  <p>3. We'll detect when it arrives in your wallet.</p>
 
-  <p><strong>Instructions:</strong></p>
-  <ol>
-    <li>Tap the button below. It will open MetaMask.</li>
-    <li>Go to the <strong>Buy</strong> section (if it doesn't open automatically).</li>
-    <li>Select <strong>xDai</strong> (on <strong>Gnosis Chain</strong>).</li>
-    <li>Buy <strong>at least 10 xDai</strong> using your card or preferred method.</li>
-    <li>Return here and click “Refresh Wallet” (coming soon) to continue.</li>
-  </ol>
+  <button id="connectBtn">Connect Wallet</button>
+  <button id="buyBtn" disabled>Buy xDai (opens in new tab)</button>
 
-  <button id="buyXdaiBtn">Buy xDai with MetaMask</button>
+  <p id="status">Not connected.</p>
 
   <script>
-    const buyLink = "https://metamask.app.link/buy?asset=xdai&amount=10";
+    let userAddress = null;
+    let previousBalance = null;
+    const gnosisChainId = '0x64'; // 100 in hex
 
-    document.getElementById("buyXdaiBtn").addEventListener("click", () => {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        window.location.href = buyLink;
-      } else {
-        alert(
-          "Please open this page inside the MetaMask Mobile app to buy xDai on Gnosis Chain."
-        );
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert('Please install MetaMask!');
+        return;
       }
+
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
+        document.getElementById('status').innerText = `Connected: ${userAddress}`;
+
+        const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
+        if (currentChain !== gnosisChainId) {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: gnosisChainId }]
+          });
+        }
+
+        document.getElementById('buyBtn').disabled = false;
+
+        // Start polling for balance
+        startBalancePolling();
+      } catch (err) {
+        console.error(err);
+        alert('Could not connect to MetaMask.');
+      }
+    }
+
+    async function getXDAIBalance() {
+      const balanceHex = await window.ethereum.request({
+        method: 'eth_getBalance',
+        params: [userAddress, 'latest']
+      });
+
+      return parseFloat(parseInt(balanceHex, 16) / 1e18);
+    }
+
+    async function startBalancePolling() {
+      previousBalance = await getXDAIBalance();
+      console.log(`Starting balance polling... Current balance: ${previousBalance} xDai`);
+
+      setInterval(async () => {
+        const currentBalance = await getXDAIBalance();
+        console.log(`Polled balance: ${currentBalance} xDai`);
+
+        if (currentBalance > previousBalance) {
+          document.getElementById('status').innerText = `🎉 xDai Received! Current balance: ${currentBalance}`;
+        }
+
+        previousBalance = currentBalance;
+      }, 5000); // every 5 seconds
+    }
+
+    document.getElementById('connectBtn').addEventListener('click', connectWallet);
+
+    document.getElementById('buyBtn').addEventListener('click', () => {
+      const buyUrl = 'https://portfolio.metamask.io/buy?asset=xdai&network=gnosis';
+      window.open(buyUrl, '_blank');
     });
   </script>
 </body>
 </html>
+
 
 
 
