@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>xDai Onramp + Swap</title>
+
+  <!-- CowSwap Widget Script -->
   <script src="https://cdn.jsdelivr.net/npm/@cowprotocol/widget-lib@latest/index.iife.js"></script>
+
   <style>
     body {
       font-family: sans-serif;
@@ -25,29 +28,70 @@
 <body>
   <h1>Buy xDai & Swap to xBZZ</h1>
 
-  <!-- Mt Pelerin Onramp Embed -->
-  <iframe
-    src="https://widget.mtpelerin.com?type=web&_ctkn=bec6626e-8913-497d-9835-6e6ae9edb144&lang=en&tab=buy&bsc=HUF&bdc=XDAI&bda=2&dnet=xdai_mainnet&addr=0x1234567890abcdef1234567890abcdef12345678&code=1234&hash=TXRQZWxlcmluLTEyMzQ%3D"
-    title="Buy xDai"
-  ></iframe>
+  <!-- Mt Pelerin Onramp Iframe will be injected here -->
+  <div id="mtp-container"></div>
 
-  <!-- CowSwap Widget -->
+  <!-- CowSwap Widget container -->
   <div id="app"></div>
 
   <script>
     const provider = window.ethereum;
+
+    /**
+     * Dynamically inject Mt Pelerin iframe
+     * This ensures each user gets their own deposit address
+     * pulled directly from MetaMask 
+     */
+    async function injectMtPelerinIframe() {
+      if (!provider) {
+        alert("Please install MetaMask.");
+        return;
+      }
+
+      // Request user's wallet connection
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+      const userAddress = accounts[0];
+
+      // Demo 4-digit code (used by Mt Pelerin's p2p address validation)
+      const code = "1234";
+
+      // Fake hash simulation (real usage would be server-generated signature)
+      const raw = `MtPelerin-${code}`;
+      const hash = btoa(raw); // base64 encode
+
+      /**
+       * Construct widget URL with injected wallet address
+       * _ctkn is the Mt Pelerin test API token
+       */
+      const url = `https://widget.mtpelerin.com?type=web&_ctkn=bec6626e-8913-497d-9835-6e6ae9edb144&lang=en&tab=buy&bsc=HUF&bdc=XDAI&bda=2&dnet=xdai_mainnet&addr=${userAddress}&code=${code}&hash=${encodeURIComponent(hash)}`;
+
+      // Create and attach the iframe to the DOM
+      const iframe = document.createElement("iframe");
+      iframe.src = url;
+      iframe.title = "Buy xDai";
+      document.getElementById("mtp-container").appendChild(iframe);
+    }
+
+    // Automatically run the onramp logic on page load
+    injectMtPelerinIframe();
+
+    /**
+     * CowSwap Widget Setup
+     * Loads token swap UI with predefined config
+     * Swaps from xDai → xBZZ on Gnosis (Chain ID 100)
+     */
     const params = {
-      appCode: "xDai2xBZZ",
+      appCode: "xDai2xBZZ", // Optional identifier for tracking
       width: "100%",
       height: "640px",
-      chainId: 100,
+      chainId: 100, // Gnosis Chain
       tokenLists: [
         "https://files.cow.fi/tokens/CoinGecko.json",
         "https://files.cow.fi/tokens/CowSwap.json"
       ],
       tradeType: "swap",
-      sell: { asset: "xdai", amount: "0" },
-      buy: { asset: "bzz", amount: "10" },
+      sell: { asset: "xdai", amount: "0" }, // User fills in amount
+      buy: { asset: "bzz", amount: "10" },  // Target: 10 xBZZ
       enabledTradeTypes: ["swap"],
       theme: { baseTheme: "dark", primary: "#2c2b20" },
       standaloneMode: false,
@@ -57,6 +101,7 @@
       hideOrdersTable: true
     };
 
+    // Render CowSwap widget inside the #app container
     cowSwapWidget.createCowSwapWidget(
       document.getElementById("app"),
       { params, provider }
