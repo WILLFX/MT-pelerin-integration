@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>xDai Onramp + Swap</title>
-
-  <!-- CowSwap Widget Script -->
   <script src="https://cdn.jsdelivr.net/npm/@cowprotocol/widget-lib@latest/index.iife.js"></script>
-
   <style>
     body {
       font-family: sans-serif;
-      padding: 40px;
       margin: 0;
+      padding: 40px;
       background: white;
       text-align: center;
     }
@@ -23,75 +21,42 @@
       margin: 30px auto;
       display: block;
     }
+    #buyButton {
+      background: black;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h1>Buy xDai & Swap to xBZZ</h1>
+  <button id="buyButton">Buy 2 xDai</button>
 
-  <!-- Mt Pelerin Onramp Iframe will be injected here -->
-  <div id="mtp-container"></div>
+  <!-- Onramp iframe will be dynamically injected here -->
+  <div id="onrampContainer"></div>
 
   <!-- CowSwap Widget container -->
   <div id="app"></div>
 
   <script>
+    // CowSwap swap widget setup
     const provider = window.ethereum;
-
-    /**
-     * Dynamically inject Mt Pelerin iframe
-     * This ensures each user gets their own deposit address
-     * pulled directly from MetaMask 
-     */
-    async function injectMtPelerinIframe() {
-      if (!provider) {
-        alert("Please install MetaMask.");
-        return;
-      }
-
-      // Request user's wallet connection
-      const accounts = await provider.request({ method: 'eth_requestAccounts' });
-      const userAddress = accounts[0];
-
-      // Demo 4-digit code (used by Mt Pelerin's p2p address validation)
-      const code = "1234";
-
-      // Fake hash simulation (real usage would be server-generated signature)
-      const raw = `MtPelerin-${code}`;
-      const hash = btoa(raw); // base64 encode
-
-      /**
-       * Construct widget URL with injected wallet address
-       * _ctkn is the Mt Pelerin test API token
-       */
-      const url = `https://widget.mtpelerin.com?type=web&_ctkn=bec6626e-8913-497d-9835-6e6ae9edb144&lang=en&tab=buy&bsc=HUF&bdc=XDAI&bda=2&dnet=xdai_mainnet&addr=${userAddress}&code=${code}&hash=${encodeURIComponent(hash)}`;
-
-      // Create and attach the iframe to the DOM
-      const iframe = document.createElement("iframe");
-      iframe.src = url;
-      iframe.title = "Buy xDai";
-      document.getElementById("mtp-container").appendChild(iframe);
-    }
-
-    // Automatically run the onramp logic on page load
-    injectMtPelerinIframe();
-
-    /**
-     * CowSwap Widget Setup
-     * Loads token swap UI with predefined config
-     * Swaps from xDai → xBZZ on Gnosis (Chain ID 100)
-     */
-    const params = {
-      appCode: "xDai2xBZZ", // Optional identifier for tracking
+    const cowSwapParams = {
+      appCode: "xDai2xBZZ",
       width: "100%",
       height: "640px",
-      chainId: 100, // Gnosis Chain
+      chainId: 100,
       tokenLists: [
         "https://files.cow.fi/tokens/CoinGecko.json",
         "https://files.cow.fi/tokens/CowSwap.json"
       ],
       tradeType: "swap",
-      sell: { asset: "xdai", amount: "0" }, // User fills in amount
-      buy: { asset: "bzz", amount: "10" },  // Target: 10 xBZZ
+      sell: { asset: "xdai", amount: "0" },
+      buy: { asset: "bzz", amount: "10" },
       enabledTradeTypes: ["swap"],
       theme: { baseTheme: "dark", primary: "#2c2b20" },
       standaloneMode: false,
@@ -101,11 +66,103 @@
       hideOrdersTable: true
     };
 
-    // Render CowSwap widget inside the #app container
+    // Initialize CowSwap widget
     cowSwapWidget.createCowSwapWidget(
       document.getElementById("app"),
-      { params, provider }
+      { params: cowSwapParams, provider }
     );
+
+    // Onramp logic starts here
+    const buyButton = document.getElementById('buyButton');
+    const onrampContainer = document.getElementById('onrampContainer');
+
+    // Gnosis chain details
+    const GnosisChain = {
+      chainId: '0x64',
+      chainName: 'Gnosis Chain',
+      nativeCurrency: { name: 'xDai', symbol: 'xDai', decimals: 18 },
+      rpcUrls: ['https://rpc.gnosischain.com/'],
+      blockExplorerUrls: ['https://gnosisscan.io/']
+    };
+
+    // Function to generate random 4-digit validation code
+    function generateValidationCode() {
+      return Math.floor(1000 + Math.random() * 9000).toString();
+    }
+
+    // Encode signature in base64 format
+    function base64Encode(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    // Convert Uint8Array signature to base64 string
+    function bufferToBase64(buffer) {
+      return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    }
+
+    buyButton.addEventListener('click', async () => {
+      if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask to use this app.');
+        return;
+      }
+
+      try {
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        const userAddress = accounts[0];
+
+        // Ensure wallet is on Gnosis Chain
+        const currentChainId = await ethereum.request({ method: 'eth_chainId' });
+        if (currentChainId !== GnosisChain.chainId) {
+          try {
+            await ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: GnosisChain.chainId }]
+            });
+          } catch (error) {
+            if (error.code === 4902) {
+              await ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [GnosisChain]
+              });
+            } else {
+              throw error;
+            }
+          }
+        }
+
+        // Prompt user for signature to verify ownership
+        const code = generateValidationCode();
+        const message = `MtPelerin-${code}`;
+
+        const signedMessage = await ethereum.request({
+          method: 'personal_sign',
+          params: [message, userAddress]
+        });
+
+        const hash = base64Encode(signedMessage);
+
+        // Inject Mt Pelerin widget with dynamic parameters
+        const url = new URL('https://widget.mtpelerin.com');
+        url.searchParams.set('type', 'web');
+        url.searchParams.set('_ctkn', 'bec6626e-8913-497d-9835-6e6ae9edb144');
+        url.searchParams.set('lang', 'en');
+        url.searchParams.set('tab', 'buy');
+        url.searchParams.set('bsc', 'HUF');
+        url.searchParams.set('bdc', 'XDAI');
+        url.searchParams.set('bda', '2');
+        url.searchParams.set('dnet', 'xdai_mainnet');
+        url.searchParams.set('addr', userAddress);
+        url.searchParams.set('code', code);
+        url.searchParams.set('hash', encodeURIComponent(hash));
+
+        // Display iframe
+        onrampContainer.innerHTML = `<iframe src="${url.toString()}" title="Buy xDai"></iframe>`;
+
+      } catch (err) {
+        console.error('Error connecting wallet or injecting widget:', err);
+        alert('Something went wrong. Please check console logs.');
+      }
+    });
   </script>
 </body>
 </html>
