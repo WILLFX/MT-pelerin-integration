@@ -1,168 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>xDai Onramp + Swap</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- CowSwap widget script -->
   <script src="https://cdn.jsdelivr.net/npm/@cowprotocol/widget-lib@latest/index.iife.js"></script>
+
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 40px;
-      background: white;
-      text-align: center;
+    body{
+      font-family:sans-serif;
+      margin:0;
+      padding:40px 12px;
+      text-align:center;
+      background:#fff;
     }
-    iframe {
-      border: none;
-      width: 100%;
-      max-width: 500px;
-      height: 660px;
-      margin: 30px auto;
-      display: block;
+    h1{ margin-top:0; }
+    /* shared widget wrapper */
+    .widget-frame{
+      width:100%;
+      max-width:500px;
+      height:660px;
+      border:none;
+      margin:30px auto;
+      display:block;
     }
-    #buyButton {
-      background: black;
-      color: white;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+    #cowwrap{ max-width:500px; margin:30px auto; }
+    button{
+      cursor:pointer;
+      padding:10px 26px;
+      border:1px solid #000;
+      border-radius:4px;
+      background:#fff;
+      font-size:16px;
     }
   </style>
 </head>
+
 <body>
-  <h1>Buy xDai & Swap to xBZZ</h1>
-  <button id="buyButton">Buy 2 xDai</button>
+  <h1>Buy xDai → Swap to xBZZ</h1>
 
-  <!-- Onramp iframe will be dynamically injected here -->
-  <div id="onrampContainer"></div>
+  <!-- STEP 1 – Buy 2 xDai (opens Mt Pelerin widget after signature) -->
+  <button id="buyButton">Click here to buy xDai</button>
 
-  <!-- CowSwap Widget container -->
-  <div id="app"></div>
+  <!-- Mt Pelerin widget is injected here after the user signs -->
+  <div id="mtpwrap"></div>
+
+  <!-- STEP 2 – CowSwap widget is always visible -->
+  <div id="cowwrap"></div>
 
   <script>
-    // CowSwap swap widget setup
-    const provider = window.ethereum;
-    const cowSwapParams = {
+  /********************************************************************
+   * Section 1 – CowSwap swap widget  (unchanged)
+   ********************************************************************/
+  (function initCowSwap(){
+    const provider = window.ethereum;           // EIP‑1193 provider
+    const params   = {
       appCode: "xDai2xBZZ",
-      width: "100%",
-      height: "640px",
-      chainId: 100,
-      tokenLists: [
+      width:   "100%",
+      height:  "640px",
+      chainId: 100,                            // Gnosis
+      tokenLists:[
         "https://files.cow.fi/tokens/CoinGecko.json",
         "https://files.cow.fi/tokens/CowSwap.json"
       ],
-      tradeType: "swap",
-      sell: { asset: "xdai", amount: "0" },
-      buy: { asset: "bzz", amount: "10" },
-      enabledTradeTypes: ["swap"],
-      theme: { baseTheme: "dark", primary: "#2c2b20" },
-      standaloneMode: false,
-      disableToastMessages: false,
-      disableProgressBar: false,
-      hideBridgeInfo: false,
-      hideOrdersTable: true
+      tradeType:"swap",
+      sell:{ asset:"xdai", amount:"0" },
+      buy :{ asset:"bzz" , amount:"10"},
+      enabledTradeTypes:["swap"],
+      theme:{ baseTheme:"dark", primary:"#2c2b20" },
+      hideOrdersTable:true
     };
-
-    // Initialize CowSwap widget
     cowSwapWidget.createCowSwapWidget(
-      document.getElementById("app"),
-      { params: cowSwapParams, provider }
+      document.getElementById("cowwrap"),
+      { params, provider }
     );
+  })();
 
-    // Onramp logic starts here
-    const buyButton = document.getElementById('buyButton');
-    const onrampContainer = document.getElementById('onrampContainer');
 
-    // Gnosis chain details
-    const GnosisChain = {
-      chainId: '0x64',
-      chainName: 'Gnosis Chain',
-      nativeCurrency: { name: 'xDai', symbol: 'xDai', decimals: 18 },
-      rpcUrls: ['https://rpc.gnosischain.com/'],
-      blockExplorerUrls: ['https://gnosisscan.io/']
+
+  /********************************************************************
+   * Section 2 – Mt Pelerin on‑ramp
+   *  – ask MetaMask to sign an AddressConfirmation payload
+   *  – inject iframe with the verified address once signature succeeds
+   ********************************************************************/
+  const buyBtn      = document.getElementById('buyButton');
+  const MTP_TEST_KEY= 'bec6626e-8913-497d-9835-6e6ae9edb144';  // test key
+  const GNOSIS_ID   = 100;
+
+  // helper: request MetaMask account + ensure Gnosis
+  async function connectGnosis(){
+    if(!window.ethereum) throw Error('MetaMask not installed');
+    const provider = window.ethereum;
+
+    // request account
+    const [account] = await provider.request({ method:'eth_requestAccounts' });
+
+    // force Gnosis chain
+    const currentId = await provider.request({ method:'eth_chainId' });
+    if(parseInt(currentId,16)!==GNOSIS_ID){
+      try{
+        await provider.request({ method:'wallet_switchEthereumChain',
+                                 params:[{ chainId:'0x64' }] });
+      }catch(err){
+        if(err.code===4902){
+          await provider.request({
+            method:'wallet_addEthereumChain',
+            params:[{
+              chainId:'0x64',
+              chainName:'Gnosis Chain',
+              nativeCurrency:{ name:'xDai',symbol:'xDai',decimals:18 },
+              rpcUrls:['https://rpc.gnosischain.com/'],
+              blockExplorerUrls:['https://gnosisscan.io/']
+            }]
+          });
+        }else{ throw err; }
+      }
+    }
+    return account;
+  }
+
+  // helper: sign EIP‑712 payload with extra "purpose" field
+  async function signAddressConfirmation(addr){
+    const provider = window.ethereum;
+    const code     = Math.floor(1000+Math.random()*9000);   // 4‑digit code
+
+    const domain   = { name:'xDai On‑Ramp', version:'1', chainId:GNOSIS_ID };
+    const types    = {
+      AddressConfirmation:[
+        { name:'wallet',  type:'address' },
+        { name:'code',    type:'uint16'  },
+        { name:'purpose', type:'string'  }
+      ]
+    };
+    const message  = {
+      wallet:  addr,
+      code,
+      purpose: 'Prove ownership of this receiving address for Mt Pelerin on‑ramp'
     };
 
-    // Function to generate random 4-digit validation code
-    function generateValidationCode() {
-      return Math.floor(1000 + Math.random() * 9000).toString();
-    }
-
-    // Encode signature in base64 format
-    function base64Encode(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
-
-    // Convert Uint8Array signature to base64 string
-    function bufferToBase64(buffer) {
-      return btoa(String.fromCharCode(...new Uint8Array(buffer)));
-    }
-
-    buyButton.addEventListener('click', async () => {
-      if (typeof window.ethereum === 'undefined') {
-        alert('Please install MetaMask to use this app.');
-        return;
-      }
-
-      try {
-        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-        const userAddress = accounts[0];
-
-        // Ensure wallet is on Gnosis Chain
-        const currentChainId = await ethereum.request({ method: 'eth_chainId' });
-        if (currentChainId !== GnosisChain.chainId) {
-          try {
-            await ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: GnosisChain.chainId }]
-            });
-          } catch (error) {
-            if (error.code === 4902) {
-              await ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [GnosisChain]
-              });
-            } else {
-              throw error;
-            }
-          }
-        }
-
-        // Prompt user for signature to verify ownership
-        const code = generateValidationCode();
-        const message = `MtPelerin-${code}`;
-
-        const signedMessage = await ethereum.request({
-          method: 'personal_sign',
-          params: [message, userAddress]
-        });
-
-        const hash = base64Encode(signedMessage);
-
-        // Inject Mt Pelerin widget with dynamic parameters
-        const url = new URL('https://widget.mtpelerin.com');
-        url.searchParams.set('type', 'web');
-        url.searchParams.set('_ctkn', 'bec6626e-8913-497d-9835-6e6ae9edb144');
-        url.searchParams.set('lang', 'en');
-        url.searchParams.set('tab', 'buy');
-        url.searchParams.set('bsc', 'HUF');
-        url.searchParams.set('bdc', 'XDAI');
-        url.searchParams.set('bda', '2');
-        url.searchParams.set('dnet', 'xdai_mainnet');
-        url.searchParams.set('addr', userAddress);
-        url.searchParams.set('code', code);
-        url.searchParams.set('hash', encodeURIComponent(hash));
-
-        // Display iframe
-        onrampContainer.innerHTML = `<iframe src="${url.toString()}" title="Buy xDai"></iframe>`;
-
-      } catch (err) {
-        console.error('Error connecting wallet or injecting widget:', err);
-        alert('Something went wrong. Please check console logs.');
-      }
+    await provider.request({
+      method: 'eth_signTypedData_v4',
+      params: [ addr, JSON.stringify({ domain, types, message, primaryType:'AddressConfirmation' }) ]
     });
+    return { addr, code };               // return both for the iframe URL
+  }
+
+  // helper: inject Mt Pelerin iframe (empty first, then swap src after sign)
+  function injectMtpIframe(addr,code){
+    const url = new URL('https://widget.mtpelerin.com');
+    url.searchParams.set('_ctkn',MTP_TEST_KEY);    // activation key
+    url.searchParams.set('type','web');
+    url.searchParams.set('tab','buy');
+    url.searchParams.set('bsc','HUF');             // default fiat
+    url.searchParams.set('bdc','XDAI');            // dest currency
+    url.searchParams.set('bda','2');               // amount
+    url.searchParams.set('dnet','xdai_mainnet');   // dest network
+    url.searchParams.set('addr',addr);             // validated addr
+    url.searchParams.set('code',code);             // 4‑digit code
+
+    // iframe (re‑create each time so we don’t cache old params)
+    document.getElementById('mtpwrap').innerHTML =
+      `<iframe class="widget-frame" src="${url.toString()}" loading="lazy"></iframe>`;
+  }
+
+  // click handler
+  buyBtn.addEventListener('click', async ()=>{
+    try{
+      const account = await connectGnosis();
+      const { addr, code } = await signAddressConfirmation(account);
+      injectMtpIframe(addr,code);
+    }catch(err){
+      console.error(err);
+      alert('Failed: '+(err.message||err));
+    }
+  });
+
   </script>
 </body>
 </html>
