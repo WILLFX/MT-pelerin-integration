@@ -159,9 +159,15 @@
     url.searchParams.set('addr',addr);             // validated addr
     url.searchParams.set('code',code);             // 4‑digit code
 
-    // iframe (re‑create each time so we don’t cache old params)
-    document.getElementById('mtpwrap').innerHTML =
-      `<iframe class="widget-frame" src="${url.toString()}" loading="lazy"></iframe>`;
+    
+document.getElementById('mtpwrap').innerHTML =
+  `<iframe
+     class="widget-frame"
+     src="${url}"
+     loading="lazy"
+     allow="camera; microphone; usb; clipboard-write; payment"
+   ></iframe>`;
+
   }
 
   // click handler
